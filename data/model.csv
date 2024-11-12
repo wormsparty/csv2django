@@ -1,0 +1,6 @@
+table_name,column_name,column_type
+users,id,primary_key
+users,username,string
+users,age,int
+users,joined_at,date
+users,user,foreign_key
