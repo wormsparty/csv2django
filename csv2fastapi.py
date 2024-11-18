@@ -1,18 +1,16 @@
 import csv
 from collections import defaultdict
+import os
 
-def generate_fastapi_files(csv_file):
+def generate_fastapi_files_with_database(csv_file):
     """
-    Generates FastAPI models, endpoints, and routers based on a CSV file describing a database schema.
+    Generates FastAPI models, schemas, endpoints, and database configuration for a modular FastAPI application.
 
     Parameters:
     csv_file (str): Path to the CSV file containing the database schema description.
 
     Returns:
-    tuple: (models_code, endpoints_code, routers_code)
-        models_code (str): Python code for the SQLAlchemy models
-        endpoints_code (str): Python code for the FastAPI endpoints
-        routers_code (str): Python code for the FastAPI routers
+    tuple: (models_code, schemas_code, endpoint_files, database_code, init_code, main_code)
     """
     # Initialize the output strings
     models_code = (
@@ -22,23 +20,45 @@ def generate_fastapi_files(csv_file):
         "Base = declarative_base()\n\n"
     )
 
-    endpoints_code = (
-        "from fastapi import APIRouter, HTTPException, Depends\n"
-        "from sqlalchemy.orm import Session\n"
-        "from .models import *\n"
-        "from .database import get_db\n"
-        "from .schemas import *\n\n"
-    )
-
     schemas_code = (
         "from pydantic import BaseModel\n\n"
     )
 
-    routers_code = (
+    main_code = (
         "from fastapi import FastAPI\n"
-        "from .endpoints import *\n\n"
-        "app = FastAPI()\n\n"
+        "from .endpoints import routers\n"
+        "from .database import create_tables\n\n"
+        "app = FastAPI()\n"
+        "create_tables()\n\n"
+        "# Include all routers\n"
+        "for router in routers:\n"
+        "    app.include_router(router)\n\n"
+        "@app.get('/')\n"
+        "def root():\n"
+        "    return {'message': 'Welcome to the API'}\n"
     )
+
+    database_code = (
+        "from sqlalchemy import create_engine\n"
+        "from sqlalchemy.ext.declarative import declarative_base\n"
+        "from sqlalchemy.orm import sessionmaker\n\n"
+        "SQLALCHEMY_DATABASE_URL = 'sqlite:///./test.db'\n\n"
+        "# Connect to the database\n"
+        "engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})\n"
+        "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\n"
+        "Base = declarative_base()\n\n"
+        "def get_db():\n"
+        "    db = SessionLocal()\n"
+        "    try:\n"
+        "        yield db\n"
+        "    finally:\n"
+        "        db.close()\n\n"
+        "def create_tables():\n"
+        "    Base.metadata.create_all(bind=engine)\n"
+    )
+
+    endpoint_files = {}
+    init_code = ""
 
     # Group fields by table
     tables = defaultdict(list)
@@ -85,12 +105,6 @@ def generate_fastapi_files(csv_file):
             models_code += f"    {column_name} = {field}\n"
             schemas_code += f"    {schema_field}\n"
 
-        # Add relationships if there are foreign keys
-        for column_name, column_type in fields:
-            if column_type == 'foreign_key':
-                referenced_model = column_name.capitalize()
-                models_code += f"    {column_name} = relationship('{referenced_model}')\n"
-
         models_code += "\n"
         schemas_code += "\n"
 
@@ -102,53 +116,49 @@ def generate_fastapi_files(csv_file):
         schemas_code += "    id: int\n\n"
         schemas_code += "    class Config:\n        orm_mode = True\n\n"
 
-    # Generate endpoints and routers
+        # Generate endpoint for this table
+        endpoint_code = (
+            f"from fastapi import APIRouter, HTTPException, Depends\n"
+            f"from sqlalchemy.orm import Session\n"
+            f"from ..models import {table_name.capitalize()} as {table_name.capitalize()}Model\n"
+            f"from ..schemas import {table_name.capitalize()}Create, {table_name.capitalize()} as {table_name.capitalize()}Schema\n"
+            f"from ..database import get_db\n\n"
+            f"router = APIRouter(prefix='/{table_name.lower()}', tags=['{table_name.lower()}'])\n\n"
+            f"@router.get('/', response_model=list[{table_name.capitalize()}Schema])\n"
+            f"def read_{table_name.lower()}s(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):\n"
+            f"    return db.query({table_name.capitalize()}Model).offset(skip).limit(limit).all()\n\n"
+            f"@router.post('/', response_model={table_name.capitalize()}Schema)\n"
+            f"def create_{table_name.lower()}(item: {table_name.capitalize()}Create, db: Session = Depends(get_db)):\n"
+            f"    db_item = {table_name.capitalize()}Model(**item.dict())\n"
+            f"    db.add(db_item)\n    db.commit()\n    db.refresh(db_item)\n"
+            f"    return db_item\n\n"
+        )
+        endpoint_files[f"{table_name}.py"] = endpoint_code
+
+        # Add router import to __init__.py
+        init_code += f"from .{table_name} import router as {table_name}_router\n"
+
+    # Add all routers to `routers` list in `__init__.py`
+    init_code += "\nrouters = [\n"
     for table_name in table_names:
-        # Generate CRUD endpoints
-        endpoint_name = table_name.lower()
-        endpoints_code += f"router = APIRouter(prefix='/{endpoint_name}', tags=['{endpoint_name}'])\n\n"
+        init_code += f"    {table_name}_router,\n"
+    init_code += "]\n"
 
-        endpoints_code += f"@router.get('/', response_model=list[{table_name.capitalize()}])\n"
-        endpoints_code += f"def read_{endpoint_name}s(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):\n"
-        endpoints_code += f"    return db.query({table_name.capitalize()}).offset(skip).limit(limit).all()\n\n"
+    return models_code, schemas_code, endpoint_files, database_code, init_code, main_code
 
-        endpoints_code += f"@router.post('/', response_model={table_name.capitalize()})\n"
-        endpoints_code += f"def create_{endpoint_name}(item: {table_name.capitalize()}Create, db: Session = Depends(get_db)):\n"
-        endpoints_code += f"    db_item = {table_name.capitalize()}(**item.dict())\n"
-        endpoints_code += f"    db.add(db_item)\n    db.commit()\n    db.refresh(db_item)\n"
-        endpoints_code += f"    return db_item\n\n"
-
-        endpoints_code += f"@router.get('/{{item_id}}', response_model={table_name.capitalize()})\n"
-        endpoints_code += f"def read_{endpoint_name}(item_id: int, db: Session = Depends(get_db)):\n"
-        endpoints_code += f"    item = db.query({table_name.capitalize()}).filter({table_name.capitalize()}.id == item_id).first()\n"
-        endpoints_code += f"    if not item:\n        raise HTTPException(status_code=404, detail='{table_name.capitalize()} not found')\n"
-        endpoints_code += f"    return item\n\n"
-
-        endpoints_code += f"@router.delete('/{{item_id}}')\n"
-        endpoints_code += f"def delete_{endpoint_name}(item_id: int, db: Session = Depends(get_db)):\n"
-        endpoints_code += f"    item = db.query({table_name.capitalize()}).filter({table_name.capitalize()}.id == item_id).first()\n"
-        endpoints_code += f"    if not item:\n        raise HTTPException(status_code=404, detail='{table_name.capitalize()} not found')\n"
-        endpoints_code += f"    db.delete(item)\n    db.commit()\n    return {{'message': 'Deleted successfully'}}\n\n"
-
-        routers_code += f"from .endpoints.{endpoint_name} import router as {endpoint_name}_router\n"
-        routers_code += f"app.include_router({endpoint_name}_router)\n\n"
-
-    return models_code, schemas_code, endpoints_code, routers_code
 
 def save_fastapi_files(csv_file, output_dir='.'):
     """
-    Generates and saves FastAPI models, endpoints, and routers files.
+    Generates and saves FastAPI models, schemas, endpoints, database, and main.py.
 
     Parameters:
     csv_file (str): Path to the CSV file containing the database schema description
     output_dir (str): Directory where the files should be saved
     """
-    models_code, schemas_code, endpoints_code, routers_code = generate_fastapi_files(csv_file)
+    models_code, schemas_code, endpoint_files, database_code, init_code, main_code = generate_fastapi_files_with_database(csv_file)
 
-    import os
-
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
+    # Ensure output directories exist
+    os.makedirs(os.path.join(output_dir, 'endpoints'), exist_ok=True)
 
     # Save models.py
     with open(os.path.join(output_dir, 'models.py'), 'w') as f:
@@ -158,13 +168,19 @@ def save_fastapi_files(csv_file, output_dir='.'):
     with open(os.path.join(output_dir, 'schemas.py'), 'w') as f:
         f.write(schemas_code)
 
-    # Save endpoints.py
-    with open(os.path.join(output_dir, 'endpoints.py'), 'w') as f:
-        f.write(endpoints_code)
+    # Save database.py
+    with open(os.path.join(output_dir, 'database.py'), 'w') as f:
+        f.write(database_code)
+
+    # Save individual endpoint files
+    for filename, content in endpoint_files.items():
+        with open(os.path.join(output_dir, 'endpoints', filename), 'w') as f:
+            f.write(content)
+
+    # Save __init__.py for endpoints
+    with open(os.path.join(output_dir, 'endpoints', '__init__.py'), 'w') as f:
+        f.write(init_code)
 
     # Save main.py
     with open(os.path.join(output_dir, 'main.py'), 'w') as f:
-        f.write(routers_code)
-
-    with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
-        f.write("fastapi\nsqlalchemy\n")
+        f.write(main_code)
