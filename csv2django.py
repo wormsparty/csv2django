@@ -100,13 +100,13 @@ def save_django_files(csv_file, output_dir='.'):
     import os
 
     # Save models.py
-    with open(os.path.join(output_dir, 'data/models.py'), 'w') as f:
+    with open(os.path.join(output_dir, 'models.py'), 'w') as f:
         f.write(models_code)
 
     # Save views.py
-    with open(os.path.join(output_dir, 'data/views.py'), 'w') as f:
+    with open(os.path.join(output_dir, 'views.py'), 'w') as f:
         f.write(views_code)
 
     # Save urls.py
-    with open(os.path.join(output_dir, 'data/urls.py'), 'w') as f:
+    with open(os.path.join(output_dir, 'urls.py'), 'w') as f:
         f.write(urls_code)
