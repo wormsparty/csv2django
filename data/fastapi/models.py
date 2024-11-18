@@ -4,8 +4,8 @@ from sqlalchemy.orm import relationship
 
 Base = declarative_base()
 
-class Users(Base):
-    __tablename__ = 'users'
+class User(Base):
+    __tablename__ = 'user'
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, index=True)
     age = Column(Integer)

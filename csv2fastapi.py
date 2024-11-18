@@ -40,13 +40,12 @@ def generate_fastapi_files_with_database(csv_file):
 
     database_code = (
         "from sqlalchemy import create_engine\n"
-        "from sqlalchemy.ext.declarative import declarative_base\n"
         "from sqlalchemy.orm import sessionmaker\n\n"
+        "from .models import Base\n"
         "SQLALCHEMY_DATABASE_URL = 'sqlite:///./test.db'\n\n"
         "# Connect to the database\n"
         "engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={'check_same_thread': False})\n"
-        "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\n"
-        "Base = declarative_base()\n\n"
+        "SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\n\n"
         "def get_db():\n"
         "    db = SessionLocal()\n"
         "    try:\n"

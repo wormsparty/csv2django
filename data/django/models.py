@@ -1,6 +1,6 @@
 from django.db import models
 
-class Users(models.Model):
+class User(models.Model):
     id = models.AutoField(primary_key=True)
     username = models.CharField(max_length=255)
     age = models.IntegerField()

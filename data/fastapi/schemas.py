@@ -1,16 +1,16 @@
 from pydantic import BaseModel
 
-class UsersBase(BaseModel):
+class UserBase(BaseModel):
     id: int
     username: str
     age: int
     joined_at: str
     user_id: int
 
-class UsersCreate(UsersBase):
+class UserCreate(UserBase):
     pass
 
-class Users(UsersBase):
+class User(UserBase):
     id: int
 
     class Config:
