@@ -1,3 +1,6 @@
 __pycache__
 *.iml
 .idea
+.venv
+*.db
+*.sqlite3

@@ -9,5 +9,5 @@ if [ ! -d .venv ]; then
 fi
 
 . .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements_fastapi.txt
 uvicorn data.fastapi.main:app --reload
