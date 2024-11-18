@@ -147,8 +147,8 @@ def generate_fastapi_files_with_database(csv_file):
 
 
 if __name__ == "__main__":
-    csv_file = 'data/model.csv'
-    output_dir = 'data/fastapi'
+    csv_file = 'model.csv'
+    output_dir = 'output/fastapi'
 
     models_code, schemas_code, endpoint_files, database_code, init_code, main_code = generate_fastapi_files_with_database(csv_file)
 

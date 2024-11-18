@@ -88,8 +88,8 @@ def generate_django_files(csv_file):
     return models_code, views_code, urls_code
 
 if __name__ == "__main__":
-    csv_file = 'data/model.csv'
-    output_dir = 'data/django'
+    csv_file = 'model.csv'
+    output_dir = 'output/django'
 
     models_code, views_code, urls_code = generate_django_files(csv_file)
 
