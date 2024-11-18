@@ -113,3 +113,7 @@ def save_django_files(csv_file, output_dir='.'):
     # Save urls.py
     with open(os.path.join(output_dir, 'urls.py'), 'w') as f:
         f.write(urls_code)
+
+    # Save requirements.txt
+    with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
+        f.write("django\ndjango_rest_framework\n")

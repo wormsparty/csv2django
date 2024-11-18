@@ -183,3 +183,7 @@ def save_fastapi_files(csv_file, output_dir='.'):
     # Save main.py
     with open(os.path.join(output_dir, 'main.py'), 'w') as f:
         f.write(main_code)
+
+    # Save requirements.txt
+    with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
+        f.write("fastapi\nsqlalchemy\nuvicorn\n")

@@ -9,7 +9,7 @@ if [ ! -d .venv ]; then
 fi
 
 . .venv/bin/activate
-pip install -r requirements_django.txt
+pip install -r data/django/requirements.txt
 
 rm -fr data/django/csvdjango data/django/manage.py
 django-admin startproject csvdjango data/django
