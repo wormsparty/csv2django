@@ -99,6 +99,9 @@ def save_django_files(csv_file, output_dir='.'):
 
     import os
 
+    # Ensure output directories exist
+    os.makedirs(output_dir, exist_ok=True)
+
     # Save models.py
     with open(os.path.join(output_dir, 'models.py'), 'w') as f:
         f.write(models_code)
