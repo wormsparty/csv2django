@@ -94,9 +94,9 @@ def generate_fastapi_files_with_database(csv_file):
             elif column_type == 'date':
                 field = "Column(Date)"
                 schema_field = f"{column_name}: str"
-            elif column_type == 'foreign_key':
-                referenced_model = column_name.capitalize()
-                field = f"Column(Integer, ForeignKey('{referenced_model.lower()}.id'))"
+            elif column_type.startswith('foreign-'):
+                referenced_table = column_type.split('-', 1)[1]
+                field = f"Column(Integer, ForeignKey('{referenced_table.lower()}.id'))"
                 schema_field = f"{column_name}_id: int"
             else:
                 raise ValueError(f"Invalid column type: {column_type}")

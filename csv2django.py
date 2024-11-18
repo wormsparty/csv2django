@@ -51,8 +51,8 @@ def generate_django_files(csv_file):
                 field = f"models.IntegerField()"
             elif column_type == 'date':
                 field = f"models.DateField()"
-            elif column_type == 'foreign_key':
-                referenced_model = column_name.capitalize()
+            elif column_type.startswith('foreign-'):
+                referenced_model = column_type.split('-', 1)[1].capitalize()
                 field = f"models.ForeignKey('{referenced_model}', on_delete=models.CASCADE)"
             else:
                 raise ValueError(f"Invalid column type: {column_type}")

@@ -10,5 +10,11 @@ class User(Base):
     username = Column(String, index=True)
     age = Column(Integer)
     joined_at = Column(Date)
+    parent = Column(Integer, ForeignKey('user.id'))
+
+class Posts(Base):
+    __tablename__ = 'posts'
+    id = Column(Integer, primary_key=True, index=True)
     user = Column(Integer, ForeignKey('user.id'))
+    content = Column(String, index=True)
 
