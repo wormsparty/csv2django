@@ -2,7 +2,7 @@
 
 cd "$(dirname "$0")"
 
-python3 main.py
+python3 csv2django.py
 
 if [ ! -d .venv ]; then
 	python3 -m venv .venv

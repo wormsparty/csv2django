@@ -87,33 +87,24 @@ def generate_django_files(csv_file):
 
     return models_code, views_code, urls_code
 
-def save_django_files(csv_file, output_dir='.'):
-    """
-    Generates and saves Django models, views, and URLs files.
+if __name__ == "__main__":
+    csv_file = 'data/model.csv'
+    output_dir = 'data/django'
 
-    Parameters:
-    csv_file (str): Path to the CSV file containing the database schema description
-    output_dir (str): Directory where the files should be saved
-    """
     models_code, views_code, urls_code = generate_django_files(csv_file)
 
     import os
 
-    # Ensure output directories exist
     os.makedirs(output_dir, exist_ok=True)
 
-    # Save models.py
     with open(os.path.join(output_dir, 'models.py'), 'w') as f:
         f.write(models_code)
 
-    # Save views.py
     with open(os.path.join(output_dir, 'views.py'), 'w') as f:
         f.write(views_code)
 
-    # Save urls.py
     with open(os.path.join(output_dir, 'urls.py'), 'w') as f:
         f.write(urls_code)
 
-    # Save requirements.txt
     with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
         f.write("django\ndjango_rest_framework\n")

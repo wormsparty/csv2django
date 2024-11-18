@@ -146,14 +146,10 @@ def generate_fastapi_files_with_database(csv_file):
     return models_code, schemas_code, endpoint_files, database_code, init_code, main_code
 
 
-def save_fastapi_files(csv_file, output_dir='.'):
-    """
-    Generates and saves FastAPI models, schemas, endpoints, database, and main.py.
+if __name__ == "__main__":
+    csv_file = 'data/model.csv'
+    output_dir = 'data/fastapi'
 
-    Parameters:
-    csv_file (str): Path to the CSV file containing the database schema description
-    output_dir (str): Directory where the files should be saved
-    """
     models_code, schemas_code, endpoint_files, database_code, init_code, main_code = generate_fastapi_files_with_database(csv_file)
 
     # Ensure output directories exist
