@@ -1,3 +1,2 @@
 django
-psycopg
 django_rest_framework
