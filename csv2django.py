@@ -107,4 +107,4 @@ if __name__ == "__main__":
         f.write(urls_code)
 
     with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
-        f.write("django\ndjango_rest_framework\n")
+        f.write("django\ndjango_rest_framework\nrequests\n")

@@ -3,19 +3,20 @@
 cd "$(dirname "$0")"
 
 python3 csv2django.py
+python3 csv2test.py
 
 if [ ! -d .venv ]; then
 	python3 -m venv .venv
 fi
 
 . .venv/bin/activate
-pip install -r data/django/requirements.txt
+pip install -r output/django/requirements.txt
 
-rm -fr data/django/csvdjango data/django/manage.py
-django-admin startproject csvdjango data/django
-cp data/django/models.py data/django/urls.py data/django/views.py data/django/csvdjango
+rm -fr output/django/csvdjango output/django/manage.py
+django-admin startproject csvdjango output/django
+cp output/django/models.py output/django/urls.py output/django/views.py output/django/csvdjango
 
-cat << EOT >> data/django/csvdjango/settings.py
+cat << EOT >> output/django/csvdjango/settings.py
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -28,7 +29,7 @@ INSTALLED_APPS = [
 ]
 EOT
 
-cd data/django || exit
+cd output/django || exit
 mkdir -p csvdjango/migrations
 touch csvdjango/migrations/__init__.py
 python manage.py makemigrations

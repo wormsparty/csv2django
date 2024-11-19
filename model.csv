@@ -3,7 +3,6 @@ user,id,primary_key
 user,username,string
 user,age,int
 user,joined_at,date
-user,parent,foreign-user
 posts,id,primary_key
 posts,user,foreign-user
 posts,content,string

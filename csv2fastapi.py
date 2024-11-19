@@ -182,4 +182,4 @@ if __name__ == "__main__":
 
     # Save requirements.txt
     with open(os.path.join(output_dir, 'requirements.txt'), 'w') as f:
-        f.write("fastapi\nsqlalchemy\nuvicorn\n")
+        f.write("fastapi\nsqlalchemy\nuvicorn\nrequests\n")
