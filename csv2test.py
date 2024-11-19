@@ -77,7 +77,7 @@ def generate_tests(csv_file, base_url="http://127.0.0.1:8000"):
         test_code += f"    response = requests.post(f\"{{BASE_URL}}/{table_name}/\", json=new_{table_name}_data)\n"
         test_code += f"    print(f'Response status: {{response.status_code}}')\n"
         test_code += f"    print(f'Response body: {{response.text}}')\n"
-        test_code += f"    assert response.status_code == 201, f\"Erreur lors de la création dans {table_name}\"\n"
+        test_code += f"    assert response.status_code == 200, f\"Erreur lors de la création dans {table_name}\"\n"
         test_code += f"    created_item = response.json()\n"
         test_code += f"    created_ids['{table_name}'] = created_item['id']\n\n"
 

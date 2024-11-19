@@ -1,0 +1,1 @@
+Les tests FastAPI foirent pour l'update d'entité mais j'ai plus de crédit pour aujourd'hui.

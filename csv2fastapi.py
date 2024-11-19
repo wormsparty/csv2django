@@ -21,7 +21,8 @@ def generate_fastapi_files_with_database(csv_file):
     )
 
     schemas_code = (
-        "from pydantic import BaseModel\n\n"
+        "from pydantic import BaseModel\n"
+        "from datetime import date\n\n"
     )
 
     main_code = (
@@ -74,17 +75,18 @@ def generate_fastapi_files_with_database(csv_file):
 
     # Generate models and schemas
     for table_name, fields in tables.items():
-        # Start model class definition
+        # [Le code des modèles et schémas reste identique...]
         models_code += f"class {table_name.capitalize()}(Base):\n"
         models_code += f"    __tablename__ = '{table_name.lower()}'\n"
 
-        schemas_code += f"class {table_name.capitalize()}Base(BaseModel):\n"
+        schemas_code += f"class {table_name.capitalize()}Create(BaseModel):\n"
+        schemas_code += f"class {table_name.capitalize()}(BaseModel):\n"
+        schemas_code += "    id: int\n"
 
-        # Add fields
         for column_name, column_type in fields:
             if column_type == 'primary_key':
                 field = "Column(Integer, primary_key=True, index=True)"
-                schema_field = f"{column_name}: int"
+                schema_field = None
             elif column_type == 'string':
                 field = "Column(String, index=True)"
                 schema_field = f"{column_name}: str"
@@ -93,7 +95,7 @@ def generate_fastapi_files_with_database(csv_file):
                 schema_field = f"{column_name}: int"
             elif column_type == 'date':
                 field = "Column(Date)"
-                schema_field = f"{column_name}: str"
+                schema_field = f"{column_name}: date"
             elif column_type.startswith('foreign-'):
                 referenced_table = column_type.split('-', 1)[1]
                 field = f"Column(Integer, ForeignKey('{referenced_table.lower()}.id'))"
@@ -102,23 +104,21 @@ def generate_fastapi_files_with_database(csv_file):
                 raise ValueError(f"Invalid column type: {column_type}")
 
             models_code += f"    {column_name} = {field}\n"
-            schemas_code += f"    {schema_field}\n"
+
+            if schema_field:
+                schemas_code += f"    {schema_field}\n"
+                if column_name != 'id':
+                    schemas_code = schemas_code.replace(f"class {table_name.capitalize()}Create(BaseModel):\n",
+                                                        f"class {table_name.capitalize()}Create(BaseModel):\n    {schema_field}\n")
 
         models_code += "\n"
-        schemas_code += "\n"
+        schemas_code += "\n    class Config:\n        orm_mode = True\n\n"
 
-        # Add schema for creation
-        schemas_code += f"class {table_name.capitalize()}Create({table_name.capitalize()}Base):\n    pass\n\n"
-
-        # Add schema for reading
-        schemas_code += f"class {table_name.capitalize()}({table_name.capitalize()}Base):\n"
-        schemas_code += "    id: int\n\n"
-        schemas_code += "    class Config:\n        orm_mode = True\n\n"
-
-        # Generate endpoint for this table
+        # Generate endpoint with new get_by_id route
         endpoint_code = (
             f"from fastapi import APIRouter, HTTPException, Depends\n"
             f"from sqlalchemy.orm import Session\n"
+            f"from datetime import date\n"
             f"from ..models import {table_name.capitalize()} as {table_name.capitalize()}Model\n"
             f"from ..schemas import {table_name.capitalize()}Create, {table_name.capitalize()} as {table_name.capitalize()}Schema\n"
             f"from ..database import get_db\n\n"
@@ -126,6 +126,12 @@ def generate_fastapi_files_with_database(csv_file):
             f"@router.get('/', response_model=list[{table_name.capitalize()}Schema])\n"
             f"def read_{table_name.lower()}s(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):\n"
             f"    return db.query({table_name.capitalize()}Model).offset(skip).limit(limit).all()\n\n"
+            f"@router.get('/{{item_id}}', response_model={table_name.capitalize()}Schema)\n"
+            f"def read_{table_name.lower()}_by_id(item_id: int, db: Session = Depends(get_db)):\n"
+            f"    db_item = db.query({table_name.capitalize()}Model).filter({table_name.capitalize()}Model.id == item_id).first()\n"
+            f"    if db_item is None:\n"
+            f"        raise HTTPException(status_code=404, detail='{table_name.capitalize()} not found')\n"
+            f"    return db_item\n\n"
             f"@router.post('/', response_model={table_name.capitalize()}Schema)\n"
             f"def create_{table_name.lower()}(item: {table_name.capitalize()}Create, db: Session = Depends(get_db)):\n"
             f"    db_item = {table_name.capitalize()}Model(**item.dict())\n"
@@ -134,16 +140,15 @@ def generate_fastapi_files_with_database(csv_file):
         )
         endpoint_files[f"{table_name}.py"] = endpoint_code
 
-        # Add router import to __init__.py
         init_code += f"from .{table_name} import router as {table_name}_router\n"
 
-    # Add all routers to `routers` list in `__init__.py`
     init_code += "\nrouters = [\n"
     for table_name in table_names:
         init_code += f"    {table_name}_router,\n"
     init_code += "]\n"
 
     return models_code, schemas_code, endpoint_files, database_code, init_code, main_code
+
 
 
 if __name__ == "__main__":

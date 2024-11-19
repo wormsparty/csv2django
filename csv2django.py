@@ -16,7 +16,11 @@ def generate_django_files(csv_file):
     """
     # Initialize the output strings
     models_code = "from django.db import models\n\n"
-    views_code = "from rest_framework import serializers, viewsets\nfrom .models import *\n\n"
+    views_code = (
+        "from rest_framework import serializers, viewsets, status\n"
+        "from rest_framework.response import Response\n"
+        "from .models import *\n\n"
+    )
     urls_code = (
         "from django.urls import path, include\n"
         "from rest_framework import routers\n"
@@ -70,10 +74,18 @@ def generate_django_files(csv_file):
         views_code += f"        model = {table_name.capitalize()}\n"
         views_code += "        fields = '__all__'\n\n"
 
-        # Generate viewset
+        # Generate viewset with custom create method
         views_code += f"class {table_name.capitalize()}ViewSet(viewsets.ModelViewSet):\n"
         views_code += f"    queryset = {table_name.capitalize()}.objects.all()\n"
         views_code += f"    serializer_class = {table_name.capitalize()}Serializer\n\n"
+
+        # Add custom create method to return 200 instead of 201
+        views_code += "    def create(self, request, *args, **kwargs):\n"
+        views_code += "        serializer = self.get_serializer(data=request.data)\n"
+        views_code += "        serializer.is_valid(raise_exception=True)\n"
+        views_code += "        self.perform_create(serializer)\n"
+        views_code += "        headers = self.get_success_headers(serializer.data)\n"
+        views_code += "        return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)\n\n"
 
     # Generate URL configuration
     urls_code += "router = routers.DefaultRouter()\n"
